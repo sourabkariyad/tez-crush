@@ -91,18 +91,29 @@ class UserController extends Controller
     protected function getLeaderboardWithUser(int $userId, int $limit = 10)
     {
         $leaderboardQuery = DB::table(DB::raw('(
-            SELECT 
-                users.id,
-                users.name,
-                users.wallet_address,
-                MAX(user_scores.level) AS highest_level,
-                MAX(user_scores.score) AS highest_score,
-                RANK() OVER (ORDER BY MAX(user_scores.level) DESC, MAX(user_scores.score) DESC) AS user_rank
-            FROM users
-            JOIN user_scores ON users.id = user_scores.user_id
-            GROUP BY users.id, users.name, users.wallet_address
+            SELECT
+                id,
+                name,
+                wallet_address,
+                highest_level,
+                highest_score,
+                created_at,
+                RANK() OVER (ORDER BY highest_level DESC, highest_score DESC, created_at ASC) AS user_rank
+            FROM (
+                SELECT 
+                    users.id,
+                    users.name,
+                    users.wallet_address,
+                    MAX(user_scores.level) AS highest_level,
+                    MAX(user_scores.score) AS highest_score,
+                    users.created_at
+                FROM users
+                JOIN user_scores ON users.id = user_scores.user_id
+                GROUP BY users.id, users.name, users.wallet_address, users.created_at
+            ) AS aggregated_users
         ) as ranked'))
         ->orderBy('user_rank');
+
 
         $leaderboard = $leaderboardQuery->limit($limit)->get();
         $userEntry = $leaderboardQuery->where('id', $userId)->first();
@@ -129,19 +140,30 @@ class UserController extends Controller
         } else {
             $leaderboard = DB::table(DB::raw('(
                 SELECT 
-                    users.id,
-                    users.name,
-                    users.wallet_address,
-                    MAX(user_scores.level) AS highest_level,
-                    MAX(user_scores.score) AS highest_score,
-                    RANK() OVER (ORDER BY MAX(user_scores.level) DESC, MAX(user_scores.score) DESC) AS user_rank
-                FROM users
-                JOIN user_scores ON users.id = user_scores.user_id
-                GROUP BY users.id, users.name, users.wallet_address
+                    id,
+                    name,
+                    wallet_address,
+                    highest_level,
+                    highest_score,
+                    user_rank
+                FROM (
+                    SELECT 
+                        users.id,
+                        users.name,
+                        users.wallet_address,
+                        MAX(user_scores.level) AS highest_level,
+                        MAX(user_scores.score) AS highest_score,
+                        users.created_at,
+                        RANK() OVER (ORDER BY MAX(user_scores.level) DESC, MAX(user_scores.score) DESC, users.created_at ASC) AS user_rank
+                    FROM users
+                    JOIN user_scores ON users.id = user_scores.user_id
+                    GROUP BY users.id, users.name, users.wallet_address, users.created_at
+                ) AS ranked_inner
             ) as ranked'))
             ->orderBy('user_rank')
             ->limit($limit)
             ->get();
+
         }
 
         return response()->json([
