@@ -30,7 +30,7 @@ class UserController extends Controller
                 ? 'User registered successfully'
                 : 'User already exists',
             'user' => [
-                'details' => $user->only(['id', 'wallet_address', 'name']),
+                'details' => $user->only(['id', 'wallet_address', 'name', 'user_unique_id']),
                 'scores' => $user->scores()->paginate(20),
                 'referrals' => $user->referrals, 
                 'referred_by' => $user->referredBy,  
