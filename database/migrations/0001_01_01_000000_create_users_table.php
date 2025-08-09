@@ -18,9 +18,10 @@ return new class extends Migration
             $table->string('mobile_number')->nullable();
             $table->string('user_unique_id')->nullable();
             $table->string('wallet_address');
+            $table->unsignedBigInteger('referred_user_id')->nullable();
             $table->foreign('referred_user_id')->references('id')->on('users')->nullOnDelete();
             $table->timestamps();
-            $table->softDeletes(); 
+            $table->softDeletes();
         });
 
         Schema::create('password_reset_tokens', function (Blueprint $table) {
