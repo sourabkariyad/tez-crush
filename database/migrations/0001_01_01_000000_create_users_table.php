@@ -18,7 +18,7 @@ return new class extends Migration
             $table->string('mobile_number')->nullable();
             $table->string('user_unique_id')->nullable();
             $table->string('wallet_address');
-            $table->bigInteger('referred_user_id')->default(0);
+            $table->foreign('referred_user_id')->references('id')->on('users')->nullOnDelete();
             $table->timestamps();
             $table->softDeletes(); 
         });

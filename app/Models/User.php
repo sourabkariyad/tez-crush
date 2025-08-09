@@ -50,8 +50,28 @@ class User extends Authenticatable
         ];
     }
 
+    protected static function booted()
+    {
+        static::creating(function ($user) {
+            if (empty($user->unique_id)) {
+                $user->user_unique_id = uniqid('', true);
+            }
+        });
+    }
+
+
     public function scores()
     {
-        return $this->hasMany(UserScore::class);
+        return $this->hasMany(UserScore::class)->select('id', 'user_id', 'score', 'level');
+    }
+
+    public function referredBy()
+    {
+        return $this->belongsTo(User::class, 'referred_user_id')->select('id', 'name', 'wallet_address');
+    }
+
+    public function referrals()
+    {
+        return $this->hasMany(User::class, 'referred_user_id')->select('id', 'name', 'wallet_address');
     }
 }

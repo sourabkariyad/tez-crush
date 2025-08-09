@@ -23,11 +23,18 @@ class UserController extends Controller
 
         $leaderboard = $this->getLeaderboardWithUser($user->id, 10);
 
+        $user->load('scores', 'referrals', 'referredBy');
+
         return response()->json([
             'message' => $user->wasRecentlyCreated
                 ? 'User registered successfully'
                 : 'User already exists',
-            'user' => $user->scores()->paginate(20),
+            'user' => [
+                'details' => $user->only(['id', 'wallet_address', 'name']),
+                'scores' => $user->scores()->paginate(20),
+                'referrals' => $user->referrals, 
+                'referred_by' => $user->referredBy,  
+            ],
             'leaderboard' => $leaderboard,
         ], $user->wasRecentlyCreated ? 201 : 200);
     }
@@ -39,13 +46,23 @@ class UserController extends Controller
             'name'           => 'nullable|string|max:255',
             'level'          => 'nullable|integer|min:1',
             'score'          => 'nullable|integer',
+            'referred_user_id' => 'nullable',
         ]);
     }
 
     protected function createOrUpdateUser(array $data)
     {
+        $referredUserId = null;
+        if (!empty($data['referred_user_id'])) {
+            $refUser = User::where('user_unique_id', $data['referred_user_id'])->first();
+            if ($refUser) {
+                $referredUserId = $refUser->id;
+            }
+        }
+
         return User::firstOrCreate(
             ['wallet_address' => $data['wallet_address']],
+            ['referred_user_id' => $referredUserId],
             ['name' => $data['name'] ?? null]
         );
     }
