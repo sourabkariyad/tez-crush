@@ -21,8 +21,6 @@ class UserController extends Controller
             $this->updateUserScore($user, $validated['level'], $validated['score']);
         }
 
-        $leaderboard = $this->getLeaderboardWithUser($user->id, 10);
-
         $user->load('scores', 'referrals', 'referredBy');
 
         return response()->json([
@@ -31,11 +29,10 @@ class UserController extends Controller
                 : 'User already exists',
             'user' => [
                 'details' => $user->only(['id', 'wallet_address', 'name', 'email', 'mobile_number', 'user_unique_id']),
-                'scores' => $user->scores()->paginate(20),
+                'scores' =>  $user->scores->sortByDesc('level')->first(), 
                 'referrals' => $user->referrals, 
                 'referred_by' => $user->referredBy,  
             ],
-            'leaderboard' => $leaderboard,
         ], $user->wasRecentlyCreated ? 201 : 200);
     }
 
