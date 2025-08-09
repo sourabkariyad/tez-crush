@@ -30,7 +30,7 @@ class UserController extends Controller
                 ? 'User registered successfully'
                 : 'User already exists',
             'user' => [
-                'details' => $user->only(['id', 'wallet_address', 'name', 'user_unique_id']),
+                'details' => $user->only(['id', 'wallet_address', 'name', 'email', 'mobile_number', 'user_unique_id']),
                 'scores' => $user->scores()->paginate(20),
                 'referrals' => $user->referrals, 
                 'referred_by' => $user->referredBy,  
@@ -44,8 +44,10 @@ class UserController extends Controller
         return $request->validate([
             'wallet_address' => 'required|string|max:255',
             'name'           => 'nullable|string|max:255',
-            'level'          => 'nullable|integer|min:1',
-            'score'          => 'nullable|integer',
+            'email'          => 'nullable|string|email|max:255',
+            'mobile_number' => 'nullable|digits_between:7,15',
+            'level'         => 'nullable|integer|min:1',
+            'score'         => 'nullable|integer',
             'referred_user_id' => 'nullable',
         ]);
     }
@@ -60,10 +62,14 @@ class UserController extends Controller
             }
         }
 
-        return User::firstOrCreate(
+        return User::updateOrCreate(
             ['wallet_address' => $data['wallet_address']],
-            ['referred_user_id' => $referredUserId],
-            ['name' => $data['name'] ?? null]
+            [
+                'referred_user_id' => $referredUserId,
+                'name' => $data['name'] ?? null,
+                'email' => $data['email'] ?? null,
+                'mobile_number' => $data['mobile_number'] ?? null,
+            ]
         );
     }
 
